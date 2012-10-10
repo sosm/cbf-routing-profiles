@@ -1,0 +1,25 @@
+# active routing profiles to compile and load
+PROFILES="car bike foot"
+
+# path to OSRM software
+OSRMPATH=/var/www/sites/osrm/Project-OSRM
+
+# extract to use
+OSMDATA=/var/www/sites/osrm/extract.osm.pbf
+
+# build path
+BUILDDIR=/var/www/sites/osrm/build
+
+# directory for storing compiled profiles
+DATADIR=/var/www/sites/osrm/data
+
+# number of threads to use
+SERVERTHREADS=2
+
+# IP address to listen to
+SERVERADDRESS=192.168.1.1
+# first port number to use, further servers use subsequent ones
+SERVERPORT=3331
+
+# directory for server log files
+LOGDIR=/var/www/sites/osrm/log
