@@ -33,8 +33,8 @@ for OSRMTYPE in $PROFILES; do
     rm -f $BUILDDIR/*
     osminbuild=$BUILDDIR/$OSRMTYPE.${osmdatafile#*.}
     ln -s $osmdatadir/$osmdatafile $osminbuild
-    ./osrm-extract $osminbuild $scriptdir/$OSRMTYPE.lua
-    ./osrm-prepare $BUILDDIR/$OSRMTYPE.osrm $BUILDDIR/$OSRMTYPE.osrm.restrictions $scriptdir/$OSRMTYPE.lua
+    LUA_PATH="$scriptdir/lib/?.lua" ./osrm-extract $osminbuild $scriptdir/$OSRMTYPE.lua
+    LUA_PATH="$scriptdir/lib/?.lua" ./osrm-prepare $BUILDDIR/$OSRMTYPE.osrm $BUILDDIR/$OSRMTYPE.osrm.restrictions $scriptdir/$OSRMTYPE.lua
     cp $BUILDDIR/$OSRMTYPE.osrm* $DATADIR
 done
 
