@@ -1,4 +1,5 @@
 local durationIsValid = durationIsValid;
+local math = math
 --
 -- Function for public transport use in routes
 --
@@ -7,7 +8,7 @@ local durationIsValid = durationIsValid;
 module("transport")
 
 -- check for ferries and set the parameters accordingly
-function is_ferry(way, default_speed)
+function is_ferry(way, default_speed, numberOfNodesInWay)
     local route = way.tags:Find("route")
 
     if route == "ferry" then

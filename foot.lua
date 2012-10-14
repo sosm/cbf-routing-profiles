@@ -82,31 +82,31 @@ end
 --
 -- Begin of globals
 
-default_speed = 4.0
-designated_speed = 4.2
+default_speed = 10
+designated_speed = 12
 speed_profile = {
-    ["footway"] = 4.2,
-	["cycleway"] = 4.0,
-	["primary"] = 3.5,
-	["primary_link"] = 3.5,
-	["secondary"] = 3.7,
-	["secondary_link"] = 3.7,
-	["tertiary"] = 3.9,
-	["tertiary_link"] = 3.9,
-	["residential"] = 4.1,
-	["unclassified"] = 4.0,
-	["living_street"] = 4.1,
+    ["footway"] = 12,
+	["cycleway"] = 10,
+	["primary"] = 5,
+	["primary_link"] = 5,
+	["secondary"] = 7,
+	["secondary_link"] = 7,
+	["tertiary"] = 9,
+	["tertiary_link"] = 9,
+	["residential"] = 10,
+	["unclassified"] = 10,
+	["living_street"] = 11,
 	["road"] = 3.9,
-	["service"] = 4.1,
-	["track"] = 4.1,
-	["path"] = 4.2,
-	["pedestrian"] = 4.2,
-	["steps"] = 4.1,
+	["service"] = 10,
+	["track"] = 10,
+	["path"] = 12,
+	["pedestrian"] = 12,
+	["steps"] = 11,
 }
 
 surface_penalties = { 
     ["paved"] = 0, 
-    ["gravel"] = 0, 
+    ["gravel"] = 1,
     ["asphalt"] = 0, 
     ["ground"] = 0, 
     ["unpaved"] = 0, 
@@ -119,7 +119,7 @@ surface_penalties = {
     ["compacted"] = 0, 
     ["wood"] = 0, 
     ["grit"] = 0, 
-    ["sand"] = -0.1
+    ["sand"] = 1
 }
 
 
@@ -151,7 +151,7 @@ function way_function (way, numberOfNodesInWay)
 	end
 
     -- ferries
-    if transport.is_ferry(way, 5) then
+    if transport.is_ferry(way, 5, numberOfNodesInWay) then
         return 1
     end
 
@@ -187,7 +187,7 @@ function way_function (way, numberOfNodesInWay)
     -- if there is a sidewalk, the better
     local sidewalk = way.tags:Find('sidewalk')
     if sidewalk == 'both' or sidewalk == 'left' or sidewalk == 'right' then
-        way.speed = way.speed + 0.1
+        way.speed = math.max(designated_speed, way.speed + 4)
     end
 
     if junction == "roundabout" then

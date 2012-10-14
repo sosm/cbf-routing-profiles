@@ -136,7 +136,7 @@ function way_function (way, numberOfNodesInWay)
 	end
 
     -- ferries
-    if transport.is_ferry(way, 5) then
+    if transport.is_ferry(way, 5, numberOfNodesInWay) then
         return 1
     end
 
