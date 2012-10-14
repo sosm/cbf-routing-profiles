@@ -10,7 +10,7 @@ fi
 . $1
 
 OLDPROCS=`ps -e | grep osrm-routed | egrep -v grep | awk '{print $1}'`
-if [ "s$OLDPROCS" != "x" ]; then
+if [ "x$OLDPROCS" != "x" ]; then
     kill $OLDPROCS
 fi
 
