@@ -1,5 +1,6 @@
-require("access")
-require("surface")
+require("tags")
+require("barrier")
+require("highway")
 require("transport")
 --
 -- Global variables required by extractor
@@ -13,7 +14,7 @@ use_restrictions        = true
 -- Globals for profile definition
 --
 
-access_tags_hierachy = { "motorcar", "motor_vehicle", "vehicle", "access" }
+local access_list = { "motorcar", "motor_vehicle", "vehicle", "access" }
 
 
 ---------------------------------------------------------------------------
@@ -24,7 +25,7 @@ access_tags_hierachy = { "motorcar", "motor_vehicle", "vehicle", "access" }
 --       out: bollard,traffic_light
 
 -- default is forbidden, so add allowed ones only
-barrier_access = {
+local barrier_access = {
     ["kerb"] = true,
     ["border_control"] = true,
     ["cattle_grid"] = true,
@@ -34,24 +35,13 @@ barrier_access = {
 }
 
 function node_function (node)
-	local acgrade = access.find_access_grade(node, access_tags_hierachy)
-    local barrier = node.tags:Find ("barrier")
-	local traffic_signal = node.tags:Find("highway")
-
-    if acgrade == 0 then
-        if barrier and barrier ~= "" then
-            node.bollard = not barrier_access[barrier]
-        end
-    else
-        node.bollard = (acgrade < 0)
-    end
+    barrier.set_bollard(node, access_list, barrier_access)
 
 	-- flag delays	
-	if traffic_signal == "traffic_signals"
-        or (barrier and barrier ~= "") then
+	if node.bollard or node.tags:Find("highway") == "traffic_signals" then
 		node.traffic_light = true
 	end
-	
+
 	return 1
 end
 
@@ -74,9 +64,8 @@ end
 --
 -- Begin of globals
 
-default_speed = 50
-designated_speed = 80
-speed_profile = { 
+local default_speed = 30
+local speed_highway = { 
     ["motorway"] = 95,
     ["motorway_link"] = 70,
     ["trunk"] = 80,
@@ -91,116 +80,65 @@ speed_profile = {
 	["residential"] = 30,
 	["living_street"] = 5,
 	["road"] = 35,
-	["service"] = 20,
-    ["track"] = 20   -- only track grade 1
+	["service"] = 20
+}
+local speed_track = { 20 }
+
+-- default is no penalty, so leave those out
+-- a factor of 0 disables ways for routing
+local surface_penalties = { 
+    ["gravel"] = 0.5, 
+    ["ground"] = 0.5, 
+    ["unpaved"] = 0.8, 
+    ["grass"] = 0, 
+    ["dirt"] = 0, 
+    ["cobblestone"] = 0.95, 
+    ["compacted"] = 0.8, 
+    ["wood"] = 0.9, 
+    ["grit"] = 0, 
+    ["sand"] = 0 
 }
 
-surface_penalties = { 
-    ["paved"] = 0,
-    ["gravel"] = 20, 
-    ["asphalt"] = 0, 
-    ["ground"] = 25, 
-    ["unpaved"] = 15, 
-    ["grass"] = 100, 
-    ["dirt"] = 100, 
-    ["concrete"] = 0, 
-    ["cobblestone"] = 5, 
-    ["pebblestone"] = 0, 
-    ["paving_stones"] = 0, 
-    ["compacted"] = 5, 
-    ["wood"] = 5, 
-    ["grit"] = 100, 
-    ["sand"] = 100 
-}
-
+local name_list = { "ref", "name" }
 
 function way_function (way, numberOfNodesInWay)
 	-- A way must have two nodes or more
 	if(numberOfNodesInWay < 2) then
-		return 0;
+		return 0
 	end
 
  	-- Check if we are allowed to access the way
-	local acgrade = access.find_access_grade(way, access_tags_hierachy)
-    if acgrade < -1 then
+    if tags.get_access_grade(way.tags, access_list) < -1 then
 		return 0
     end
-
-    -- Set the name that will be used for instructions	
-	local name = way.tags:Find("name")
-	local ref = way.tags:Find("ref")
-	if "" ~= ref then
-		way.name = ref
-	elseif "" ~= name then
-		way.name = name
-	end
 
     -- ferries
     if transport.is_ferry(way, 5, numberOfNodesInWay) then
         return 1
     end
 
-    -- designated bike ways get maxspeed, everything else according to profile
-    local highway = way.tags:Find("highway")
-    local trackgrade = way.tags:Find("tracktype")
-    local caraccess = access.value_to_grade(way.tags:Find('motorcar'))
-    if caraccess > 1 then
-      way.speed = designated_speed
-    else
-        -- Set the avg speed on the way if it is accessible by road class
-        if highway == "track" then
-            if tracktype == "grade1" then
-                way.speed = speed_profile["track"]
-            else
-                return 0
-            end
-        elseif speed_profile[highway] ~= nil then 
-          way.speed = speed_profile[highway]
+    -- is it a valid highway?
+    if not highway.set_base_speed(way, speed_highway, speed_track) then
+        -- check for designated access
+        if tags.as_access_grade(way.tags:Find('motorcar')) > 0 then
+            way.speed = default_speed
         else
-          return 0
-        end
-    end
-
-    -- surface speeds
-    local surfacepenalty = surface_penalties[surface.get_surface(way.tags)]
-
-    if surfacepenalty ~= nil then
-        if surfacepenalty >= 100 then
             return 0
         end
-        if way.speed > surfacepenalty then
-            way.speed = way.speed - surfacepenalty
-        end
     end
-
-    local lanes = way.tags:Find("lanes")
-    if lanes == "1" then
+    -- make speed adjustments
+    if not highway.adjust_speed_by_surface(way, surface_penalties, 1.0) then
+        return 0
+    end
+    if way.tags:Find("lanes") == "1" then
         way.speed = math.floor(way.speed*0.8)
     end
+    highway.restrict_to_maxspeed(way, 0.95)
 
-    -- finally: restrict to maxspeed
-	local maxspeed = parseMaxspeed(way.tags:Find ( "maxspeed") )
-    if (maxspeed > 0 and maxspeed < way.speed) then
-      way.speed = math.floor(maxspeed*0.95)
-    end
-	
 	-- Set direction according to tags on way
-    local oneway = way.tags:Find("oneway")
-    local junction = way.tags:Find("junction")
-    if oneway == "no" or oneway == "0" or oneway == "false" then
-        way.direction = Way.bidirectional
-    elseif oneway == "-1" then
-        way.direction = Way.opposite
-    elseif oneway == "yes" or oneway == "1" or oneway == "true" or junction == "roundabout" or highway == "motorway_link" or highway == "motorway" then
-        way.direction = Way.oneway
-    else
-        way.direction = Way.bidirectional
-    end
-
-    if junction == "roundabout" then
-        way.roundabout = true
-    end
+    highway.set_directions(way, nil)
   
+    way.name = tags.get_name(way.tags, name_list)
 	way.type = 1
 	return 1
 end

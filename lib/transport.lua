@@ -1,11 +1,14 @@
 local durationIsValid = durationIsValid;
 local math = math
+local tags = require('tags')
 --
 -- Function for public transport use in routes
 --
 
 
 module("transport")
+
+local ferry_name_tags = { 'name' }
 
 -- check for ferries and set the parameters accordingly
 function is_ferry(way, default_speed, numberOfNodesInWay)
@@ -19,6 +22,7 @@ function is_ferry(way, default_speed, numberOfNodesInWay)
         else
             way.speed = default_speed
         end
+        way.name = tags.get_name(way.tags, ferry_name_tags)
         way.type = 1
         return true
     end

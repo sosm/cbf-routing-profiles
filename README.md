@@ -8,6 +8,8 @@ Installation
 ------------
 
 * get OSRM (http://project-osrm.org) and compile
+  (needs to be patched for lua module support, get the patch from
+   https://github.com/lonvia/Project-OSRM/tree/lua-stdlib)
 
 * get OSRM website (https://github.com/DennisSchiefer/Project-OSRM-Web)
 
@@ -34,6 +36,5 @@ Installation
 License
 -------
 
-Profiles are derived from the OSRM profiles and are under the same license
-as OSRM, the GNU Affero General Public License. Anything else is hereby
-released to the public domain.
+All scripts are hereby released to the public domain. Feel free to do whatever
+you want with them.

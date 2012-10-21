@@ -1,5 +1,6 @@
-require("access")
-require("surface")
+require("tags")
+require("barrier")
+require("highway")
 require("transport")
 --
 -- Global variables required by extractor
@@ -13,7 +14,7 @@ use_restrictions        = true
 -- Globals for profile definition
 --
 
-access_tags_hierachy = { "bicycle", "vehicle", "access" }
+local access_list = { "bicycle", "vehicle", "access" }
 
 
 ---------------------------------------------------------------------------
@@ -24,7 +25,7 @@ access_tags_hierachy = { "bicycle", "vehicle", "access" }
 --       out: bollard,traffic_light
 
 -- default is forbidden, so add allowed ones only
-barrier_access = {
+local barrier_access = {
     ["kerb"] = true,
     ["block"] = true,
     ["bollard"] = true,
@@ -36,24 +37,13 @@ barrier_access = {
 }
 
 function node_function (node)
-	local acgrade = access.find_access_grade(node, access_tags_hierachy)
-    local barrier = node.tags:Find ("barrier")
-	local traffic_signal = node.tags:Find("highway")
-
-    if acgrade == 0 then
-        if barrier and barrier ~= "" then
-            node.bollard = not barrier_access[barrier]
-        end
-    else
-        node.bollard = (acgrade < 0)
-    end
+    barrier.set_bollard(node, access_list, barrier_access)
 
 	-- flag delays	
-	if traffic_signal == "traffic_signals"
-        or (barrier and barrier ~= "") then
+	if node.bollard or node.tags:Find("highway") == "traffic_signals" then
 		node.traffic_light = true
 	end
-	
+
 	return 1
 end
 
@@ -76,9 +66,9 @@ end
 --
 -- Begin of globals
 
-default_speed = 16
-designated_speed = 18
-speed_profile = { 
+local default_speed = 16
+local designated_speed = 18
+local speed_highway = { 
 	["cycleway"] = 18,
 	["primary"] = 15,
 	["primary_link"] = 15,
@@ -91,31 +81,35 @@ speed_profile = {
 	["living_street"] = 18,
 	["road"] = 17,
 	["service"] = 17,
-	["track"] = 16,
 	["path"] = 16,
 	["footway"] = 5,
 	["pedestrian"] = 5,
 	["steps"] = 1,
 }
 
-surface_penalties = { 
-    ["paved"] = 0, 
-    ["gravel"] = -2, 
-    ["asphalt"] = 0, 
-    ["ground"] = -1, 
-    ["unpaved"] = -2, 
-    ["grass"] = -5, 
-    ["dirt"] = -5, 
-    ["concrete"] = 0, 
-    ["cobblestone"] = -5, 
-    ["pebblestone"] = -1, 
-    ["paving_stones"] = 0, 
-    ["compacted"] = -1, 
-    ["wood"] = -1, 
-    ["grit"] = -4, 
-    ["sand"] = -6 
+local speed_track = { 18, 16, 16 }
+
+local speed_path = {
+    sac_scale = nil,
+    foot = { designated = 0.5,
+             yes = 0.9 }
 }
 
+local surface_penalties = { 
+    ["gravel"] = 0.8,
+    ["ground"] = 0.8,
+    ["unpaved"] = 0.9,
+    ["grass"] = 0.5,
+    ["dirt"] = 0.5,
+    ["cobblestone"] = -5, 
+    ["pebblestone"] = 0.9, 
+    ["compacted"] = 0.9, 
+    ["wood"] = 0.95,
+    ["grit"] = 0.6,
+    ["sand"] = 0.4
+}
+
+local name_list = { "ref", "name" }
 
 function way_function (way, numberOfNodesInWay)
 	-- A way must have two nodes or more
@@ -124,97 +118,48 @@ function way_function (way, numberOfNodesInWay)
 	end
 
  	-- Check if we are allowed to access the way
-	local acgrade = access.find_access_grade(way, access_tags_hierachy)
-    if acgrade < -1 then
+    if tags.get_access_grade(way.tags, access_list) < -1 then
 		return 0
     end
-    -- no biking above grade3
-    local highway = way.tags:Find("highway")
-    local trackgrade = way.tags:Find("tracktype")
-    if (trackgrade == "grade4" or trackgrade == "grade5") then
-      return 0
-    end
-    -- no biking on sac_scale
-    local sac_scale = way.tags:Find("sac_scale")
-    if highway == 'path' and sac_scale ~= "" then
-      return 0
-    end
-
-    -- Set the name that will be used for instructions	
-	local name = way.tags:Find("name")
-	local ref = way.tags:Find("ref")
-	if "" ~= ref then
-		way.name = ref
-	elseif "" ~= name then
-		way.name = name
-	end
 
     -- ferries
     if transport.is_ferry(way, 5, numberOfNodesInWay) then
         return 1
     end
 
-    -- designated bike ways get maxspeed, everything else according to profile
-    local bikeaccess = access.value_to_grade(way.tags:Find('bicycle'))
-    if bikeaccess > 1 then
-      way.speed = designated_speed
-    else
-        -- Set the avg speed on the way if it is accessible by road class
-        if speed_profile[highway] ~= nil then 
-          way.speed = speed_profile[highway]
-        -- Set the avg speed on ways that are marked accessible
-        elseif acgrade > 0 then
+    -- is it a valid highway?
+    if not highway.set_base_speed(way, speed_highway, speed_track) then
+        -- check for designated access
+        if tags.as_access_grade(way.tags:Find('bicycle')) > 0 then
             way.speed = default_speed
         else
-          return 0
+            return 0
         end
     end
 
-    -- surface speeds
-    local surfacepenalty = surface_penalties[surface.get_surface(way.tags)]
-
-    if (surfacepenalty ~= nil and way.speed > surfacepenalty) then
-      way.speed = way.speed - surfacepenalty
+    if not highway.adjust_speed_for_path(way, speed_path) then
+        return 0
+    end
+    if not highway.adjust_speed_by_surface(way, surface_penalties, 1.0) then
+        return 0
     end
 
     local cycleway = way.tags:Find('cycleway')
     if (cycleway == 'lane' or cycleway == 'track') and
-         (highway == 'primary' or highway == 'secondary' or highway == 'tertiary') then
-        way.speed = way.speed + 2
+         (highway == 'primary' or highway == 'secondary') then
+        way.speed = way.speed + 1
     end
 
     -- finally: restrict to maxspeed
-	local maxspeed = parseMaxspeed(way.tags:Find ( "maxspeed") )
-    if (maxspeed > 0 and maxspeed < way.speed) then
-      way.speed = maxspeed
-    end
-	
-	-- Set direction according to tags on way
-	local oneway = way.tags:Find("oneway")
-	local onewayClass = way.tags:Find("oneway:bicycle")
-	local cycleway = way.tags:Find("cycleway")
-    if onewayClass == "yes" or onewayClass == "1" or onewayClass == "true" then
-        way.direction = Way.oneway
-    elseif onewayClass == "no" or onewayClass == "0" or onewayClass == "false" then
-        way.direction = Way.bidirectional
-    elseif onewayClass == "-1" then
-        way.direction = Way.opposite
-    elseif oneway == "no" or oneway == "0" or oneway == "false" then
-        way.direction = Way.bidirectional
-    elseif cycleway == "opposite" or cycleway == "opposite_track" or cycleway == "opposite_lane" then
-        way.direction = Way.bidirectional
-    elseif oneway == "-1" then
-        way.direction = Way.opposite
-    elseif oneway == "yes" or oneway == "1" or oneway == "true" or junction == "roundabout" then
-        way.direction = Way.oneway
-    else
+    highway.restrict_to_maxspeed(way, 1.0)
+
+    -- Set direction according to tags on way
+    highway.set_directions(way, "bicycle")
+	if tags.as_oneway(way.tags:Find("cycleway")) == Way.opposite then
         way.direction = Way.bidirectional
     end
   
-    if junction == "roundabout" then
-        way.roundabout = true
-    end
-  
+    way.name = tags.get_name(way.tags, name_list)
 	way.type = 1
 	return 1
 end
