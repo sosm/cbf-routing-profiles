@@ -86,7 +86,7 @@ function set_directions(source, mode)
         source.junction = false
         if mode ~= nil then
             local onewaymode = source.tags:Find(string.format("oneway:%s", mode))
-            if onewaymode ~= nil then
+            if onewaymode ~= '' then
                 source.direction = tags.as_oneway(onewaymode)
                 return true
             end

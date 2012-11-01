@@ -1,4 +1,5 @@
-local durationIsValid = durationIsValid;
+local durationIsValid = durationIsValid
+local parseDuration = parseDuration
 local math = math
 local tags = require('tags')
 --
@@ -17,7 +18,7 @@ function is_ferry(way, default_speed, numberOfNodesInWay)
     if route == "ferry" then
         local duration = way.tags:Find("duration")
         if durationIsValid(duration) then
-            way.speed = math.max( duration / math.max(1, numberOfNodesInWay-1) );
+            way.speed = math.max( parseDuration(duration) / math.max(1, numberOfNodesInWay-1) );
             way.is_duration_set = true
         else
             way.speed = default_speed
