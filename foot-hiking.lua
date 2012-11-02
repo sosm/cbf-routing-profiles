@@ -100,7 +100,7 @@ local speed_track = { 10, 11, 11, 11, 11 }
 
 local speed_path = {
     sac_scale = { mountain_hiking = 0.9,
-                  demanding_mountain_hiking = 0.5,
+                  demanding_mountain_hiking = 0.8,
                   alpine_hiking = 0,
                   demanding_alpine_hiking = 0
                 },
@@ -109,7 +109,11 @@ local speed_path = {
 
 local surface_penalties = { 
     ["gravel"] = 0.9,
-    ["paved"] = 0.9
+    ["paved"] = 0.8,
+    ["cobblestone"] = 0.8,
+    ["pebblestone"] = 0.8,
+    ["concrete"] = 0.8,
+    ["sand"] = 0.9
 }
 
 local name_list = { "ref", "name" }
