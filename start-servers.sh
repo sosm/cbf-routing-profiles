@@ -2,8 +2,16 @@
 #
 # Kill and restart OSRM servers
 
+if [ "x$1" = "x-c" ]; then
+    shift
+    COPYDATA=yes
+else
+    COPYDATA=no
+fi
+
+
 if [ "x$1" = "x" ] || [ ! -f "$1" ]; then
-    echo "Usage: start_servers.sh <configfile>"
+    echo "Usage: start_servers.sh [-c] <configfile>"
     exit -1
 fi
 
@@ -15,6 +23,10 @@ if [ "x$OLDPROCS" != "x" ]; then
 fi
 
 sleep 2
+
+if [ $COPYDATA = "yes" ]; then
+    cp $BUILDDIR/*.osrm* $DATADIR
+fi
 
 cd $OSRMPATH
 for OSRMTYPE in $PROFILES; do

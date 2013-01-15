@@ -4,8 +4,15 @@
 #
 #
 
+if [ "x$1" = "x-c" ]; then
+    shift
+    COPYDATA=yes
+else
+    COPYDATA=no
+fi
+
 if [ "x$1" = "x" ] || [ ! -f "$1" ]; then
-    echo "Usage: compile_profiles.sh <configfile>"
+    echo "Usage: compile_profiles.sh [-c] <configfile>"
     exit -1
 fi
 
@@ -29,13 +36,14 @@ scriptdir=`dirname $0`
 scriptdir=`cd $scriptdir; pwd`
 
 cd $OSRMPATH
+rm -f $BUILDDIR/*
 for OSRMTYPE in $PROFILES; do 
-    rm -f $BUILDDIR/*
     osminbuild=$BUILDDIR/$OSRMTYPE.${osmdatafile#*.}
     ln -s $osmdatadir/$osmdatafile $osminbuild
     LUA_PATH="$scriptdir/lib/?.lua" ./osrm-extract $osminbuild $scriptdir/$OSRMTYPE.lua
     LUA_PATH="$scriptdir/lib/?.lua" ./osrm-prepare $BUILDDIR/$OSRMTYPE.osrm $BUILDDIR/$OSRMTYPE.osrm.restrictions $scriptdir/$OSRMTYPE.lua
-    cp $BUILDDIR/$OSRMTYPE.osrm* $DATADIR
 done
 
-
+if [ $COPYDATA = "yes" ]; then
+    cp $BUILDDIR/*.osrm* $DATADIR
+fi
