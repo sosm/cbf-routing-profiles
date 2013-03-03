@@ -8,8 +8,7 @@ Installation
 ------------
 
 * get OSRM (http://project-osrm.org) and compile
-  (needs to be patched for lua module support, get the patch from
-   https://github.com/lonvia/Project-OSRM/tree/lua-stdlib)
+  currently version 0.3.3 is needed
 
 * get OSRM website (https://github.com/DennisSchiefer/Project-OSRM-Web)
 
@@ -27,11 +26,16 @@ Installation
 
 * compile OSRM profiles:
 
-    ./compile_profiles.sh your_profiles.conf
+    ./compile_profiles.sh -c your_profiles.conf
 
 * start servers:
 
     ./start-servers.sh your_profiles.conf
+
+* when updating, first recompile the profiles, then reinitialise the server:
+
+    ./compile_profiles.sh your_profiles.conf
+    ./start-servers.sh -c your_profiles.conf
 
 License
 -------

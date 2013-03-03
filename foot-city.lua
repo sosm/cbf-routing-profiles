@@ -11,7 +11,7 @@ require("transport")
 ignore_areas 			= true -- future feature
 traffic_signal_penalty 	= 2
 u_turn_penalty 			= 2
-use_restrictions        = false
+use_turn_restrictions        = false
 
 --
 -- Globals for profile definition
@@ -121,19 +121,14 @@ local surface_penalties = {
 
 local name_list = { "ref", "name" }
 
-function way_function (way, numberOfNodesInWay)
-	-- A way must have two nodes or more
-	if(numberOfNodesInWay < 2) then
-		return 0;
-	end
-
+function way_function (way)
     -- Check if we are allowed to access the way
     if tags.get_access_grade(way.tags, access_list) < -1 then
 		return 0
     end
 
     -- ferries
-    if transport.is_ferry(way, 5, numberOfNodesInWay) then
+    if transport.is_ferry(way, 5) then
         return 1
     end
 

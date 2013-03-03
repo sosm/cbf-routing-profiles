@@ -3,13 +3,27 @@
 local tags = require('tags')
 local math = math
 local Way = Way
-local parseMaxspeed = parseMaxspeed
 local tonumber = tonumber
 local string = string
 local ipairs = ipairs
 local print = print
 
 module('highway')
+
+local function parse_maxspeed(source)
+	if source == nil then
+		return 0
+	end
+	local n = tonumber(source:match("%d*"))
+	if n == nil then
+		n = 0
+	end
+	if string.match(source, "mph") or string.match(source, "mp/h") then
+		n = (n*1609)/1000;
+	end
+	return math.abs(n)
+end
+
 
 -- Set basic speed for way
 -- Returns false if no speed is defined.
@@ -71,9 +85,21 @@ end
 
 -- speedfac controls how well the speed limit should be kept
 function restrict_to_maxspeed(source, speedfac)
-	local maxspeed = math.floor(parseMaxspeed(source.tags:Find ( "maxspeed") )*speedfac)
+	local maxspeed = math.floor(parse_maxspeed(source.tags:Find ("maxspeed"))*speedfac)
     if (maxspeed > 0 and maxspeed < source.speed) then
       source.speed = maxspeed
+    end
+    -- check if an explicit speed for backward direction is set
+    local maxspeed_forward = parse_maxspeed(source.tags:Find("maxspeed:forward"))
+    local maxspeed_backward = parse_maxspeed(source.tags:Find("maxspeed:backward"))
+    if maxspeed_forward > 0 then
+	    if source.bidirectional == source.direction then
+          source.backward_speed = source.speed
+        end
+        source.speed = maxspeed_forward 
+    end
+    if maxspeed_backward > 0 then
+      source.backward_speed = maxspeed_backward
     end
 end
 
