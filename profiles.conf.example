@@ -17,7 +17,7 @@ DATADIR=/var/www/sites/osrm/data
 SERVERTHREADS=2
 
 # IP address to listen to
-SERVERADDRESS=192.168.1.1
+SERVERADDRESS=127.0.0.1
 # first port number to use, further servers use subsequent ones
 SERVERPORT=3331
 
