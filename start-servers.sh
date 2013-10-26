@@ -30,5 +30,5 @@ fi
 
 cd $OSRMPATH
 for OSRMTYPE in $PROFILES; do
-  ./osrm-routed $DATADIR/server-$OSRMTYPE.ini >> $LOGDIR/server-$OSRMTYPE.log &
+  ./osrm-routed -c $DATADIR/server-$OSRMTYPE.ini >> $LOGDIR/server-$OSRMTYPE.log &
 done 

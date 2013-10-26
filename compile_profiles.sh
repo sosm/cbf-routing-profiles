@@ -40,8 +40,8 @@ rm -f $BUILDDIR/*
 for OSRMTYPE in $PROFILES; do 
     osminbuild=$BUILDDIR/$OSRMTYPE.${osmdatafile#*.}
     ln -s $osmdatadir/$osmdatafile $osminbuild
-    LUA_PATH="$scriptdir/lib/?.lua" ./osrm-extract $osminbuild $scriptdir/$OSRMTYPE.lua
-    LUA_PATH="$scriptdir/lib/?.lua" ./osrm-prepare $BUILDDIR/$OSRMTYPE.osrm $BUILDDIR/$OSRMTYPE.osrm.restrictions $scriptdir/$OSRMTYPE.lua
+    LUA_PATH="$scriptdir/lib/?.lua" ./osrm-extract -p $scriptdir/$OSRMTYPE.lua $osminbuild
+    LUA_PATH="$scriptdir/lib/?.lua" ./osrm-prepare -r $BUILDDIR/$OSRMTYPE.osrm.restrictions -p $scriptdir/$OSRMTYPE.lua $BUILDDIR/$OSRMTYPE.osrm 
 done
 
 if [ $COPYDATA = "yes" ]; then
