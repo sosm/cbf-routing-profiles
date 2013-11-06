@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/bash
 #
 # Kill and restart OSRM servers
 
