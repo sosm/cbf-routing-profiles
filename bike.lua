@@ -150,7 +150,9 @@ function way_function (way)
 
     -- Set direction according to tags on way
     highway.set_directions(way, "bicycle")
-	if tags.as_oneway(way.tags:Find("cycleway")) == Way.opposite then
+	if (tags.as_oneway(way.tags:Find("cycleway")) == Way.opposite)
+       or (tags.as_oneway(way.tags:Find("cycleway:right")) == Way.opposite)
+       or (tags.as_oneway(way.tags:Find("cycleway:left")) == Way.opposite) then
         way.direction = Way.bidirectional
     end
   

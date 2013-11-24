@@ -8,7 +8,7 @@ require("transport")
 ignore_areas 			= true -- future feature
 traffic_signal_penalty 	= 2
 u_turn_penalty 			= 20
-use_restrictions        = true
+use_turn_restrictions   = true
 
 --
 -- Globals for profile definition
@@ -162,10 +162,7 @@ function way_function (way)
     highway.restrict_to_maxspeed(way, 1.0)
 
     -- Set direction according to tags on way
-    highway.set_directions(way, "bicycle")
-	if tags.as_oneway(way.tags:Find("cycleway")) == Way.opposite then
-        way.direction = Way.bidirectional
-    end
+    highway.set_cycleway_directions(way)
   
     way.name = tags.get_name(way.tags, name_list)
 	way.type = 1

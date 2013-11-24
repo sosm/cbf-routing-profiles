@@ -128,3 +128,12 @@ function set_directions(source, mode)
         end
     end
 end
+
+function set_cycleway_directions(way)
+    set_directions(way, "bicycle")
+	if tags.as_oneway(way.tags:Find("cycleway")) == Way.opposite
+       or (tags.as_oneway(way.tags:Find("cycleway:right")) == Way.opposite)
+       or (tags.as_oneway(way.tags:Find("cycleway:left")) == Way.opposite) then
+        way.direction = Way.bidirectional
+    end
+end
