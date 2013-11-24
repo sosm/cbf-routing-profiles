@@ -29,6 +29,8 @@ if [ $COPYDATA = "yes" ]; then
 fi
 
 cd $OSRMPATH
+PORT=$SERVERPORT
 for OSRMTYPE in $PROFILES; do
-  ./osrm-routed -c $DATADIR/server-$OSRMTYPE.ini >> $LOGDIR/server-$OSRMTYPE.log &
+  ./osrm-routed -i $SERVERADDRESS -p $PORT -t $SERVERTHREADS $DATADIR/$OSRMTYPE.osrm >> $LOGDIR/server-$OSRMTYPE.log &
+  PORT=$((PORT + 1))
 done 
