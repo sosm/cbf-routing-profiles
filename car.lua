@@ -16,6 +16,9 @@ use_turn_restrictions   = true
 
 local access_list = { "motorcar", "motor_vehicle", "vehicle", "access" }
 
+function turn_function (angle)
+   return highway.turn_function(angle, 10, 1.4)
+end
 
 ---------------------------------------------------------------------------
 --

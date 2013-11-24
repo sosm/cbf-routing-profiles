@@ -137,3 +137,14 @@ function set_cycleway_directions(way)
         way.direction = Way.bidirectional
     end
 end
+
+
+function turn_function (angle, turn_penalty, turn_bias)
+    -- compute turn penalty as angle^2, with a left/right bias
+    k = turn_penalty/(90.0*90.0)
+	if angle>=0 then
+	    return angle*angle*k/turn_bias
+	else
+	    return angle*angle*k*turn_bias
+    end
+end
