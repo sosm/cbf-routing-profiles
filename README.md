@@ -4,11 +4,16 @@ cbf-routing-profiles
 Experimental routing profiles for OSRM, together with some scripts to compile and
 run a site with multiple routing profiles.
 
+Note that the bicycle and routing profiles misuse speed as a weight to give
+preference to more quiet routes. Therefore, times for the routes cannot be
+trusted. On routing.osm.ch, times are computed from the distance instead,
+assuming that walkers and bikers maintain a fairly constant speed.
+
 Installation
 ------------
 
-* get OSRM (http://project-osrm.org) and compile
-  currently version 0.3.7 is needed
+* get OSRM (http://project-osrm.org) and compile.
+  Currently version 0.3.7 is needed.
 
 * get OSRM website (https://github.com/DennisSchiefer/Project-OSRM-Web)
 
@@ -16,7 +21,7 @@ Installation
 
 * create configuration file for the compilation environment, see `profiles.conf.example`
 
-* add aditional profiles to OSRM website, see `WebContent/OSRM.config.js`
+* add additional profiles to OSRM website, see `WebContent/OSRM.config.js`
 
 * adapt look and feel of OSRM website to your liking
 
@@ -30,7 +35,7 @@ Installation
 
 * when updating, first recompile the profiles, then reinitialise the server:
 
-    ./compile_profiles.sh your_profiles.conf
+    ./compile_profiles.sh your_profiles.conf &&
     ./start-servers.sh -c your_profiles.conf
 
 License
