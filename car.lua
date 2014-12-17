@@ -55,14 +55,16 @@ end
 --
 -- Way-> in: tags
 --       out: String name,
---            double speed,
+--            double forward_speed,
+--            double backward_speed,
 --            short type,
 --            bool access,
 --            bool roundabout,
 --            bool is_duration_set,
 --            bool is_access_restricted,
 --            bool ignore_in_grid,
---            direction { notSure, oneway, bidirectional, opposite }
+--            forward_mode { 0, 1, 2 }
+--            backward_mode { 0, 1, 2 }
 	
 --
 -- Begin of globals
@@ -119,7 +121,8 @@ function way_function (way, numberOfNodesInWay)
     if not highway.set_base_speed(way, speed_highway, speed_track) then
         -- check for designated access
         if tags.as_access_grade(way.tags:Find('motorcar')) > 0 then
-            way.speed = default_speed
+            way.forward_speed = default_speed
+            way.backward_speed = default_speed
         else
             return 0
         end
@@ -129,7 +132,8 @@ function way_function (way, numberOfNodesInWay)
         return 0
     end
     if way.tags:Find("lanes") == "1" then
-        way.speed = math.floor(way.speed*0.8)
+        way.forward_speed = math.floor(way.forward_speed*0.8)
+        way.backward_speed = math.floor(way.backward_speed*0.8)
     end
     highway.restrict_to_maxspeed(way, 0.95)
 

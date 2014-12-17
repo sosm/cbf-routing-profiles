@@ -126,15 +126,18 @@ local oneway_values = {
 }
 
 -- convert to a oneway type (default is bidirectional)
-function as_oneway(value)
+function as_oneway(source, value)
     -- work around the fact that Way may not always
     -- be available at load time
     local ownum = oneway_values[value]
     if ownum == 1 then
-        return Way.oneway
+        source.forward_mode = 1
+        source.backward_mode = 0
     elseif ownum == -1 then
-        return Way.opposite
+        source.forward_mode = 0
+        source.backward_mode = 1
     else
-        return Way.bidirectional
+        source.forward_mode = 1
+        source.backward_mode = 1
     end
 end

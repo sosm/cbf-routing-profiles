@@ -65,14 +65,16 @@ end
 --
 -- Way-> in: tags
 --       out: String name,
---            double speed,
+--            double forward_speed,
+--            double backward_speed,
 --            short type,
 --            bool access,
 --            bool roundabout,
 --            bool is_duration_set,
 --            bool is_access_restricted,
 --            bool ignore_in_grid,
---            direction { notSure, oneway, bidirectional, opposite }
+--            forward_mode { 0, 1, 2 }
+--            backward_mode { 0, 1, 2 }
 	
 --
 -- Begin of globals
@@ -139,7 +141,8 @@ function way_function (way)
     if not highway.set_base_speed(way, speed_highway, speed_track) then
         -- check for designated access
         if tags.as_access_grade(way.tags:Find('bicycle')) > 0 then
-            way.speed = default_speed
+            way.forward_speed = default_speed
+            way.backward_speed = default_speed
         else
             return 0
         end
@@ -155,7 +158,8 @@ function way_function (way)
     local cycleway = way.tags:Find('cycleway')
     if (cycleway == 'lane' or cycleway == 'track') and
          (highway == 'primary' or highway == 'secondary') then
-        way.speed = way.speed + 1
+        way.forward_speed = way.forward_speed + 1
+        way.backward_speed = way.backward_speed + 1
     end
 
     -- finally: restrict to maxspeed

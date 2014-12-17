@@ -63,14 +63,16 @@ end
 --
 -- Way-> in: tags
 --       out: String name,
---            double speed,
+--            double forward_speed,
+--            double backward_speed,
 --            short type,
 --            bool access,
 --            bool roundabout,
 --            bool is_duration_set,
 --            bool is_access_restricted,
 --            bool ignore_in_grid,
---            direction { notSure, oneway, bidirectional, opposite }
+--            forward_mode { 0, 1, 2 }
+--            backward_mode { 0, 1, 2 }
 	
 --
 -- Begin of globals
@@ -133,7 +135,8 @@ function way_function (way)
     if not highway.set_base_speed(way, speed_highway, speed_track) then
         -- check for designated access
         if tags.as_access_grade(way.tags:Find('foot')) > 0 then
-            way.speed = default_speed
+            way.forward_speed = default_speed
+            way.backward_speed = default_speed
         else
             return 0
         end
@@ -149,7 +152,8 @@ function way_function (way)
     -- if there is a sidewalk, the better
     local sidewalk = way.tags:Find('sidewalk')
     if sidewalk == 'both' or sidewalk == 'left' or sidewalk == 'right' then
-        way.speed = default_speed
+        way.forward_speed = default_speed
+        way.backward_speed = default_speed
     end
 
     local junction = way.tags:Find('junction')
