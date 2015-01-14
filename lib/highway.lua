@@ -64,7 +64,7 @@ function adjust_speed_by_surface(source, result, surfaces, default)
         result.backward_speed = math.floor(result.backward_speed * default)
     end
 
-    return source.forward_speed > 0 or source.backward_speed > 0
+    return result.forward_speed > 0 or result.backward_speed > 0
 end
 
 function adjust_speed_for_path(source, result, speeds)

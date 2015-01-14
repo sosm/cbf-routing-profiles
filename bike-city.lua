@@ -50,7 +50,7 @@ local barrier_access = {
 function node_function (node, result)
     barrier.set_bollard(node, result, access_list, barrier_access)
 
-    -- flag delays	
+    -- flag delays
     if result.bollard or node:get_value_by_key("highway") == "traffic_signals" then
         result.traffic_light = true
     end
