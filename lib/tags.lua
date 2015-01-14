@@ -30,7 +30,7 @@ local access_values = { ["yes"] = 1,
 --find first tag in access hierachy which is set
 function get_access_tag(taglist, access_tags_hierachy)
     for i,v in ipairs(access_tags_hierachy) do
-        local tag = taglist:Find(v)
+        local tag = taglist:get_value_by_key(v)
         if tag ~= '' then
             return tag
         end
@@ -55,14 +55,14 @@ end
 -------------------  SURFACE -----------------------------------------------
 
 function get_surface(taglist)
-    local surface = taglist:Find('surface')
+    local surface = taglist:get_value_by_key('surface')
     if surface ~= '' then
         return surface
     else
-        local highway = taglist:Find("highway")
+        local highway = taglist:get_value_by_key("highway")
 
         if highway == 'track' then
-            local grade = taglist:Find("tracktype")
+            local grade = taglist:get_value_by_key("tracktype")
             if grade == "grade1" then
                 return "paved"
             elseif grade == "grade3" then
@@ -87,7 +87,7 @@ end
 -- Set the name of the way
 function get_name (taglist, name_list)
     for i,v in ipairs(name_list) do
-        local tag = taglist:Find(v)
+        local tag = taglist:get_value_by_key(v)
         if tag ~= '' then
             return tag
         end
@@ -98,7 +98,7 @@ end
 ------------ TRACKS ------------------------------
 
 function get_trackgrade(taglist)
-    local grade = taglist:Find('tracktype')
+    local grade = taglist:get_value_by_key('tracktype')
     if grade ~= '' then
         s, e, g = string.find(grade, '^grade(%d)$')
         if s == 1 then

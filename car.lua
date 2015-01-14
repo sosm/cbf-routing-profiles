@@ -41,7 +41,7 @@ function node_function (node)
     barrier.set_bollard(node, access_list, barrier_access)
 
 	-- flag delays	
-	if node.bollard or node.tags:Find("highway") == "traffic_signals" then
+	if node.bollard or node:get_value_by_key("highway") == "traffic_signals" then
 		node.traffic_light = true
 	end
 
@@ -108,7 +108,7 @@ local name_list = { "ref", "name" }
 
 function way_function (way, numberOfNodesInWay)
  	-- Check if we are allowed to access the way
-    if tags.get_access_grade(way.tags, access_list) < -1 then
+    if tags.get_access_grade(way, access_list) < -1 then
 		return 0
     end
 
@@ -120,7 +120,7 @@ function way_function (way, numberOfNodesInWay)
     -- is it a valid highway?
     if not highway.set_base_speed(way, speed_highway, speed_track) then
         -- check for designated access
-        if tags.as_access_grade(way.tags:Find('motorcar')) > 0 then
+        if tags.as_access_grade(way:get_value_by_key('motorcar')) > 0 then
             way.forward_speed = default_speed
             way.backward_speed = default_speed
         else
@@ -131,7 +131,7 @@ function way_function (way, numberOfNodesInWay)
     if not highway.adjust_speed_by_surface(way, surface_penalties, 1.0) then
         return 0
     end
-    if way.tags:Find("lanes") == "1" then
+    if way:get_value_by_key("lanes") == "1" then
         way.forward_speed = math.floor(way.forward_speed*0.8)
         way.backward_speed = math.floor(way.backward_speed*0.8)
     end
@@ -140,7 +140,7 @@ function way_function (way, numberOfNodesInWay)
 	-- Set direction according to tags on way
     highway.set_directions(way, nil)
   
-    way.name = tags.get_name(way.tags, name_list)
+    way.name = tags.get_name(way, name_list)
 	way.type = 1
 	return 1
 end

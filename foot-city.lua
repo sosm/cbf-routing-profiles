@@ -49,7 +49,7 @@ function node_function (node)
     barrier.set_bollard(node, access_list, barrier_access)
 
 	-- flag delays	
-	if node.bollard or node.tags:Find("highway") == "traffic_signals" then
+	if node.bollard or node:get_value_by_key("highway") == "traffic_signals" then
 		node.traffic_light = true
 	end
 
@@ -125,7 +125,7 @@ local name_list = { "ref", "name" }
 
 function way_function (way)
     -- Check if we are allowed to access the way
-    if tags.get_access_grade(way.tags, access_list) < -1 then
+    if tags.get_access_grade(way, access_list) < -1 then
 		return 0
     end
 
@@ -137,7 +137,7 @@ function way_function (way)
     -- is it a valid highway?
     if not highway.set_base_speed(way, speed_highway, speed_track) then
         -- check for designated access
-        if tags.as_access_grade(way.tags:Find('foot')) > 0 then
+        if tags.as_access_grade(way:get_value_by_key('foot')) > 0 then
             way.forward_speed = default_speed
             way.backward_speed = default_speed
         else
@@ -153,18 +153,18 @@ function way_function (way)
     end
 
     -- if there is a sidewalk, the better
-    local sidewalk = way.tags:Find('sidewalk')
+    local sidewalk = way:get_value_by_key('sidewalk')
     if sidewalk == 'both' or sidewalk == 'left' or sidewalk == 'right' then
         way.forward_speed = default_speed
         way.backward_speed = default_speed
     end
 
-    local junction = way.tags:Find('junction')
+    local junction = way:get_value_by_key('junction')
     if junction == "roundabout" then
         way.roundabout = true
     end
   
-    way.name = tags.get_name(way.tags, name_list)
+    way.name = tags.get_name(way, name_list)
 	way.type = 1
 	return 1
 end

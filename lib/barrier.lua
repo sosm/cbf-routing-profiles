@@ -13,10 +13,10 @@ module('barrier')
 -- barriers - table, mapping applicable barriers to access booelans
 --            (default is false, so giving accessible ones will do)
 function set_bollard(node, access_list, barriers)
-	local acgrade = tags.get_access_grade(node.tags, access_list)
+	local acgrade = tags.get_access_grade(node, access_list)
 
     if acgrade == 0 then
-        local barrier = node.tags:Find ("barrier")
+        local barrier = node:get_value_by_key ("barrier")
         if barrier ~= "" then
             if barriers[barrier] ~= nil then
                 node.bollard = not barriers[barrier]

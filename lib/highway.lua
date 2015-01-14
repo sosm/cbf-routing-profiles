@@ -28,11 +28,11 @@ end
 -- Set basic speed for way
 -- Returns false if no speed is defined.
 function set_base_speed(source, highway_speed, track_speed)
-    local highway = source.tags:Find('highway')
+    local highway = source:get_value_by_key('highway')
 
     if highway == 'track' then
         if track_speed ~= nil then
-            local grade = tonumber(tags.get_trackgrade(source.tags))
+            local grade = tonumber(tags.get_trackgrade(source))
             if track_speed[grade] ~= nil then
                 source.forward_speed = track_speed[grade]
                 source.backward_speed = track_speed[grade]
@@ -54,7 +54,7 @@ end
 
 
 function adjust_speed_by_surface(source, surfaces, default)
-    local surface = tags.get_surface(source.tags)
+    local surface = tags.get_surface(source)
 
     if surfaces[surface] ~= nil then
         source.forward_speed = math.floor(source.forward_speed * surfaces[surface])
@@ -68,9 +68,9 @@ function adjust_speed_by_surface(source, surfaces, default)
 end
 
 function adjust_speed_for_path(source, speeds)
-    if source.tags:Find("highway") == 'path' then
+    if source:get_value_by_key("highway") == 'path' then
         for k,v in ipairs(speeds) do
-            local tag = source.tags:Find(k)
+            local tag = source:get_value_by_key(k)
             if tag ~= '' then
                 if v == nil then
                     source.forward_speed = 0
@@ -92,7 +92,7 @@ end
 
 -- speedfac controls how well the speed limit should be kept
 function restrict_to_maxspeed(source, speedfac)
-	local maxspeed = math.floor(parse_maxspeed(source.tags:Find ("maxspeed"))*speedfac)
+	local maxspeed = math.floor(parse_maxspeed(source:get_value_by_key ("maxspeed"))*speedfac)
     if (maxspeed > 0 and maxspeed < source.forward_speed) then
       source.forward_speed = maxspeed
     end
@@ -100,8 +100,8 @@ function restrict_to_maxspeed(source, speedfac)
       source.backward_speed = maxspeed
     end
     -- check if an explicit speed for backward direction is set
-    local maxspeed_forward = parse_maxspeed(source.tags:Find("maxspeed:forward"))
-    local maxspeed_backward = parse_maxspeed(source.tags:Find("maxspeed:backward"))
+    local maxspeed_forward = parse_maxspeed(source:get_value_by_key("maxspeed:forward"))
+    local maxspeed_backward = parse_maxspeed(source:get_value_by_key("maxspeed:backward"))
     if maxspeed_forward > 0 then
         source.forward_speed = maxspeed_forward
     end
@@ -111,7 +111,7 @@ function restrict_to_maxspeed(source, speedfac)
 end
 
 function set_directions(source, mode)
-    local junction = source.tags:Find("junction")
+    local junction = source:get_value_by_key("junction")
     if junction == "roundabout" then
         source.forward_mode = 1
         source.backward_mode = 0
@@ -119,18 +119,18 @@ function set_directions(source, mode)
     else
         source.junction = false
         if mode ~= nil then
-            local onewaymode = source.tags:Find(string.format("oneway:%s", mode))
+            local onewaymode = source:get_value_by_key(string.format("oneway:%s", mode))
             if onewaymode ~= '' then
                 tags.as_oneway(source, onewaymode)
                 return true
             end
         end
-        local oneway = source.tags:Find("oneway")
+        local oneway = source:get_value_by_key("oneway")
         if oneway ~= nil then
             tags.as_oneway(source, oneway)
             return true
         end
-        local highway = source.tags:Find("highway")
+        local highway = source:get_value_by_key("highway")
         if highway == "motorway" or highway == "motorway_link" then
             source.forward_mode = 1
             source.backward_mode = 0
@@ -140,9 +140,9 @@ end
 
 function set_cycleway_directions(way)
     set_directions(way, "bicycle")
-	if (tags.oneway_value(way.tags:Find("cycleway")) == -1)
-       or (tags.oneway_value(way.tags:Find("cycleway:right")) == -1)
-       or (tags.oneway_value(way.tags:Find("cycleway:left")) == -1) then
+	if (tags.oneway_value(way:get_value_by_key("cycleway")) == -1)
+       or (tags.oneway_value(way:get_value_by_key("cycleway:right")) == -1)
+       or (tags.oneway_value(way:get_value_by_key("cycleway:left")) == -1) then
          way.forward_mode = 1
          way.backward_mode = 0
     end
