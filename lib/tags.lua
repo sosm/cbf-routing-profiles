@@ -130,18 +130,18 @@ function oneway_value(value)
 end
 
 -- convert to a oneway type (default is bidirectional)
-function as_oneway(source, value)
+function as_oneway(result, value)
     -- work around the fact that Way may not always
     -- be available at load time
     local ownum = oneway_value(value)
     if ownum == 1 then
-        source.forward_mode = 1
-        source.backward_mode = 0
+        result.forward_mode = 1
+        result.backward_mode = 0
     elseif ownum == -1 then
-        source.forward_mode = 0
-        source.backward_mode = 1
+        result.forward_mode = 0
+        result.backward_mode = 1
     else
-        source.forward_mode = 1
-        source.backward_mode = 1
+        result.forward_mode = 1
+        result.backward_mode = 1
     end
 end

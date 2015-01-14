@@ -12,18 +12,18 @@ module("transport")
 local ferry_name_tags = { 'name' }
 
 -- check for ferries and set the parameters accordingly
-function is_ferry(way, default_speed)
+function is_ferry(way, result, default_speed)
     local route = way:get_value_by_key("route")
 
     if route == "ferry" then
         local duration = way:get_value_by_key("duration")
         if durationIsValid(duration) then
-            way.duration = math.max( parseDuration(duration), 1 );
+            result.duration = math.max( parseDuration(duration), 1 );
         else
-            way.speed = default_speed
+            result.speed = default_speed
         end
-        way.name = tags.get_name(way, ferry_name_tags)
-        way.type = 1
+        result.name = tags.get_name(way, ferry_name_tags)
+        result.type = 1
         return true
     end
     return false
