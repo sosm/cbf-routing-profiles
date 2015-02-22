@@ -13,7 +13,7 @@ Installation
 ------------
 
 * get OSRM (http://project-osrm.org) and compile.
-  Currently version 0.3.7 is needed.
+  Currently version 0.4.5 is needed.
 
 * get OSRM website (https://github.com/DennisSchiefer/Project-OSRM-Web)
 
