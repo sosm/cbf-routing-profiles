@@ -166,7 +166,7 @@ function way_function (way, result)
     highway.restrict_to_maxspeed(way, result, 1.0)
 
     -- Set direction according to tags on way
-    highway.set_cycleway_directions(way, result, result)
+    highway.set_cycleway_directions(way, result)
   
     result.name = tags.get_name(way, name_list)
     result.type = 1

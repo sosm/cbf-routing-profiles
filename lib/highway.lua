@@ -140,11 +140,10 @@ end
 
 function set_cycleway_directions(way, result)
     set_directions(way, result, "bicycle")
-	if (tags.oneway_value(way:get_value_by_key("cycleway")) == -1)
+    if (tags.oneway_value(way:get_value_by_key("cycleway")) == -1)
        or (tags.oneway_value(way:get_value_by_key("cycleway:right")) == -1)
        or (tags.oneway_value(way:get_value_by_key("cycleway:left")) == -1) then
-         result.forward_mode = 1
-         result.backward_mode = 0
+         result.backward_mode = 1
     end
 end
 
