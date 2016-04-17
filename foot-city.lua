@@ -125,7 +125,7 @@ local name_list = { "ref", "name" }
 
 function way_function (way, result)
     -- Check if we are allowed to access the way
-    if tags.get_access_grade(way, access_list) < -1 then
+    if tags.get_access_grade(way, access_list) < 0 then
 		return 0
     end
 
