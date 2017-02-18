@@ -1,106 +1,147 @@
--- FOOT profile for hikers - preference for unpaved underground
---
---
-require("tags")
-require("barrier")
-require("highway")
-require("transport")
---
--- Global variables required by extractor
---
-ignore_areas 			= true -- future feature
-traffic_signal_penalty 	= 2
-u_turn_penalty 			= 2
-use_turn_restrictions   = false
+-- Foot profile
 
---
--- Globals for profile definition
---
+api_version = 1
 
-local access_list = { "foot", "access" }
+local find_access_tag = require("lib/access").find_access_tag
+local Set = require('lib/set')
+local Sequence = require('lib/sequence')
+local Handlers = require("lib/handlers")
+local next = next       -- bind to local for speed
 
+properties.max_speed_for_map_matching    = 40/3.6 -- kmph -> m/s
+properties.use_turn_restrictions         = false
+properties.continue_straight_at_waypoint = false
+properties.weight_name                   = 'duration'
 
----------------------------------------------------------------------------
---
--- NODE FUNCTION
---
--- Node    in: lat,lon,id,tags
--- result out: bollard,traffic_light
+local walking_speed = 10
 
--- default is forbidden, so add allowed ones only
-local barrier_access = {
-    ["kerb"] = true,
-    ["block"] = true,
-    ["bollard"] = true,
-    ["border_control"] = true,
-    ["cattle_grid"] = true,
-    ["entrance"] = true,
-    ["sally_port"] = true,
-    ["toll_both"] = true,
-    ["cycle_barrier"] = true,
-    ["stile"] = true,
-    ["block"] = true,
-    ["kissing_gate"] = true,
-    ["turnstile"] = true,
-    ["hampshire_gate"] = true
-}
+local profile = {
+  default_mode            = mode.walking,
+  default_speed           = 10,
+  designated_speed        = 12,
+  oneway_handling         = 'specific',     -- respect 'oneway:foot' but not 'oneway'
+  traffic_light_penalty   = 2,
+  u_turn_penalty          = 2,
 
-function node_function (node, result)
-    barrier.set_bollard(node, result, access_list, barrier_access)
+  barrier_whitelist = Set {
+    'kerb',
+    'block',
+    'bollard',
+    'border_control',
+    'cattle_grid',
+    'entrance',
+    'sally_port',
+    'toll_booth',
+    'cycle_barrier',
+    'gate',
+    'no',
+    'stile',
+    'bock',
+    'kissing_gate',
+    'turnstile',
+    'hampshire_gate'
+  },
 
-	-- flag delays	
-	if result.bollard or node:get_value_by_key("highway") == "traffic_signals" then
-		result.traffic_light = true
-	end
+  access_tag_whitelist = Set {
+    'yes',
+    'foot',
+    'permissive',
+    'designated'
+  },
 
-	return 1
-end
+  access_tag_blacklist = Set {
+    'no',
+    'private',
+    'agricultural',
+    'forestry',
+    'delivery'
+  },
 
+  access_tags_hierarchy = Sequence {
+    'foot',
+    'access'
+  },
 
----------------------------------------------------------------------------
---
--- WAY FUNCTION
---
--- Way     in: tags
--- result out: String name,
---             double forward_speed,
---             double backward_speed,
---             short type,
---             bool access,
---             bool roundabout,
---             bool is_duration_set,
---             bool is_access_restricted,
---             bool ignore_in_grid,
---             forward_mode { 0, 1, 2 }
---             backward_mode { 0, 1, 2 }
-	
---
--- Begin of globals
+  restrictions = Sequence {
+    'foot'
+  },
 
-local default_speed = 10
-local designated_speed = 12
-local speed_highway = {
-    ["footway"] = 12,
-	["cycleway"] = 10,
-	["primary"] = 7,
-	["primary_link"] = 7,
-	["secondary"] = 8,
-	["secondary_link"] = 8,
-	["tertiary"] = 9,
-	["tertiary_link"] = 9,
-	["residential"] = 10,
-	["unclassified"] = 10,
-	["living_street"] = 11,
-	["road"] = 10,
-	["service"] = 10,
-	["path"] = 12,
-	["pedestrian"] = 12,
-	["steps"] = 11,
-}
+  -- list of suffixes to suppress in name change instructions
+  suffix_list = Set {
+    'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'North', 'South', 'West', 'East'
+  },
 
-local speed_track = { 10, 11, 11, 11, 11 }
+  avoid = Set {
+    'impassable'
+  },
 
-local speed_path = {
+  speeds = Sequence {
+    highway = {
+      footway         = 12,
+      cycleway        = 10,
+      primary         = 7,
+      primary_link    = 7,
+      secondary       = 8,
+      secondary_link  = 8,
+      tertiary        = 9,
+      tertiary_link   = 9,
+      unclassified    = 10,
+      residential     = 10,
+      road            = 10,
+      living_street   = 11,
+      service         = 10,
+      path            = 12,
+      steps           = 11,
+      pedestrian      = 12,
+      pier            = 10,
+    },
+
+    railway = {
+      platform        = 10
+    },
+
+    amenity = {
+      parking         = 10,
+      parking_entrance= 10
+    },
+
+    man_made = {
+      pier            = 10
+    },
+
+    leisure = {
+      track           = 10
+    }
+  },
+
+  route_speeds = {
+    ferry = 5
+  },
+
+  bridge_speeds = {
+  },
+
+  surface_penalties = { 
+    ["gravel"] = 0.9,
+    ["paved"] = 0.8,
+    ["cobblestone"] = 0.8,
+    ["pebblestone"] = 0.8,
+    ["concrete"] = 0.8,
+    ["sand"] = 0.9
+  },
+
+  tracktype_speeds = {
+    grade1 =  10,
+    grade2 =  11,
+    grade3 =  11,
+    grade4 =  11,
+    grade5 =  11
+  },
+
+  smoothness_speeds = {
+  },
+
+  speed_path = {
     sac_scale = { mountain_hiking = 0.9,
                   demanding_mountain_hiking = 0.8,
                   alpine_hiking = 0,
@@ -109,59 +150,125 @@ local speed_path = {
     bicycle = { designated = 0.5, yes = 0.9 }
 }
 
-local surface_penalties = { 
-    ["gravel"] = 0.9,
-    ["paved"] = 0.8,
-    ["cobblestone"] = 0.8,
-    ["pebblestone"] = 0.8,
-    ["concrete"] = 0.8,
-    ["sand"] = 0.9
+
 }
 
-local name_list = { "ref", "name" }
 
-function way_function (way, result)
-    -- Check if we are allowed to access the way
-    if tags.get_access_grade(way, access_list) < 0 then
-		return 0
+function node_function (node, result)
+  -- parse access and barrier tags
+  local access = find_access_tag(node, profile.access_tags_hierarchy)
+  if access then
+    if profile.access_tag_blacklist[access] then
+      result.barrier = true
     end
+  else
+    local barrier = node:get_value_by_key("barrier")
+    if barrier then
+      --  make an exception for rising bollard barriers
+      local bollard = node:get_value_by_key("bollard")
+      local rising_bollard = bollard and "rising" == bollard
 
-    -- ferries
-    if transport.is_ferry(way, result, 5) then
-        return 1
+      if not profile.barrier_whitelist[barrier] and not rising_bollard then
+        result.barrier = true
+      end
     end
+  end
 
-    -- is it a valid highway?
-    if not highway.set_base_speed(way, result, speed_highway, speed_track) then
-        -- check for designated access
-        if tags.as_access_grade(way:get_value_by_key('foot')) > 0 then
-            result.forward_speed = default_speed
-            result.backward_speed = default_speed
-        else
-            return 0
-        end
-    end
+  -- check if node is a traffic light
+  local tag = node:get_value_by_key("highway")
+  if "traffic_signals" == tag then
+    result.traffic_lights = true
+  end
+end
 
-    if not highway.adjust_speed_for_path(way, result, speed_path) then
-        return 0
-    end
-    if not highway.adjust_speed_by_surface(way, result, surface_penalties, 1.0) then
-        return 0
-    end
+-- main entry point for processsing a way
+function way_function(way, result)
+  -- the intial filtering of ways based on presence of tags
+  -- affects processing times significantly, because all ways
+  -- have to be checked.
+  -- to increase performance, prefetching and intial tag check
+  -- is done in directly instead of via a handler.
 
-    -- if there is a sidewalk, the better
-    local sidewalk = way:get_value_by_key('sidewalk')
-    if sidewalk == 'both' or sidewalk == 'left' or sidewalk == 'right' then
-        result.forward_speed = default_speed
-        result.backward_speed = default_speed
-    end
+  -- in general we should  try to abort as soon as
+  -- possible if the way is not routable, to avoid doing
+  -- unnecessary work. this implies we should check things that
+  -- commonly forbids access early, and handle edge cases later.
 
-    local junction = way:get_value_by_key('junction')
-    if junction == "roundabout" then
-        result.roundabout = true
-    end
-  
-    result.name = tags.get_name(way, name_list)
-    result.type = 1
-    return 1
+  -- data table for storing intermediate values during processing
+  local data = {
+    -- prefetch tags
+    highway = way:get_value_by_key('highway'),
+    bridge = way:get_value_by_key('bridge'),
+    route = way:get_value_by_key('route'),
+    leisure = way:get_value_by_key('leisure'),
+    man_made = way:get_value_by_key('man_made'),
+    railway = way:get_value_by_key('railway'),
+    platform = way:get_value_by_key('platform'),
+    amenity = way:get_value_by_key('amenity'),
+    public_transport = way:get_value_by_key('public_transport')
+  }
+
+  -- perform an quick initial check and abort if the way is
+  -- obviously not routable. here we require at least one
+  -- of the prefetched tags to be present, ie. the data table
+  -- cannot be empty
+  if next(data) == nil then     -- is the data table empty?
+    return
+  end
+
+  local handlers = Sequence {
+    -- set the default mode for this profile. if can be changed later
+    -- in case it turns we're e.g. on a ferry
+    'handle_default_mode',
+
+    -- check various tags that could indicate that the way is not
+    -- routable. this includes things like status=impassable,
+    -- toll=yes and oneway=reversible
+    'handle_blocked_ways',
+
+    -- determine access status by checking our hierarchy of
+    -- access tags, e.g: motorcar, motor_vehicle, vehicle
+    'handle_access',
+
+    -- check whether forward/backward directons are routable
+    'handle_oneway',
+
+    -- check whether forward/backward directons are routable
+    'handle_destinations',
+
+    -- check whether we're using a special transport mode
+    'handle_ferries',
+    'handle_movables',
+
+    -- compute speed taking into account way type, maxspeed tags, etc.
+    'handle_speed',
+    'handle_surface_penalties',
+
+    -- set speed for path
+    'adjust_speed_for_path',
+
+    -- handle turn lanes and road classification, used for guidance
+    'handle_classification',
+
+    -- handle various other flags
+    'handle_roundabouts',
+    'handle_startpoint',
+
+    -- set name, ref and pronunciation
+    'handle_names'
+  }
+
+  Handlers.run(handlers,way,result,data,profile)
+end
+
+function turn_function (turn)
+  turn.duration = 0.
+
+  if turn.direction_modifier == direction_modifier.u_turn then
+     turn.duration = turn.duration + profile.u_turn_penalty
+  end
+
+  if turn.has_traffic_light then
+     turn.duration = profile.traffic_light_penalty
+  end
 end

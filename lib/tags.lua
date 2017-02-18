@@ -1,147 +1,124 @@
--- Various functions to convert tags into something more computable
+-- Helpers for searching and parsing tags
 
-local ipairs = ipairs
-local Way = Way
-local string = string
+local Tags = {}
 
-module("tags")
+-- return [forward,backward] values for a specific tag.
+-- e.g. for maxspeed search forward:
+--   maxspeed:forward
+--   maxspeed
+-- and backward:
+--   maxspeed:backward
+--   maxspeed
 
---------------- ACCESS ------------------------------------------------------
+function Tags.get_forward_backward_by_key(way,data,key)
+  local forward = way:get_value_by_key(key .. ':forward')
+  local backward = way:get_value_by_key(key .. ':backward')
+
+  if forward and backward then
+    return forward, backward
+  end
+
+  local common = way:get_value_by_key(key)
+  return forward or common,
+         backward or common
+end
+
+-- return [forward,backward] values, searching a
+-- prioritized sequence of tags
+-- e.g. for the sequence [maxspeed,advisory] search forward:
+--   maxspeed:forward
+--   maxspeed
+--   advisory:forward
+--   advisory
+-- and for backward:
+--   maxspeed:backward
+--   maxspeed
+--   advisory:backward
+--   advisory
+
+function Tags.get_forward_backward_by_set(way,data,keys)
+  local forward, backward
+  for i,key in ipairs(keys) do
+    if not forward then
+      forward = way:get_value_by_key(key .. ':forward')
+    end
+    if not backward then
+      backward = way:get_value_by_key(key .. ':backward')
+    end
+    if not forward or not backward then
+      local common = way:get_value_by_key(key)
+      forward = forward or common
+      backward = backward or common
+    end
+    if forward and backward then
+      break
+    end
+  end
+
+  return forward, backward
+end
+
+-- look through a sequence of keys combined with a prefix
+-- e.g. for the sequence [motorcar,motor_vehicle,vehicle] and the prefix 'oneway' search for:
+-- oneway:motorcar
+-- oneway:motor_vehicle
+-- oneway:vehicle
+
+function Tags.get_value_by_prefixed_sequence(way,seq,prefix)
+  local v
+  for i,key in ipairs(seq) do
+    v = way:get_value_by_key(prefix .. ':' .. key)
+    if v then
+      return v
+    end
+  end
+end
+
+-- look through a sequence of keys combined with a postfix
+-- e.g. for the sequence [motorcar,motor_vehicle,vehicle] and the postfix 'oneway' search for:
+-- motorcar:oneway
+-- motor_vehicle:oneway
+-- vehicle:oneway
+
+function Tags.get_value_by_postfixed_sequence(way,seq,postfix)
+  local v
+  for i,key in ipairs(seq) do
+    v = way:get_value_by_key(key .. ':' .. postfix)
+    if v then
+      return v
+    end
+  end
+end
+
+-- check if key-value pairs are set in a way and return a
+-- corresponding constant if it is. e.g. for this input:
 --
--- Access is converted into an int with increasing degree of accessibility.
+-- local speeds = {
+--  highway = {
+--    residential = 20,
+--    primary = 40
+--  },
+--  amenity = {
+--    parking = 10
+--  }
+-- }
 --
---   2 - designated
---   1 - yes
---   0 - unknown
---  -1 - destination
---  -2 - no
+-- we would check whether the following key-value combinations
+-- are set, and return the corresponding constant:
+--
+-- highway = residential      => 20
+-- highway = primary          => 40
+-- amenity = parking          => 10
 
-local access_values = { ["yes"] = 1, 
-                  ["permissive"] = 1, 
-                  ["designated"] = 2,
-                  ["no"] = -2, 
-                  ["private"] = -2, -- should be destination, once it is implemented
-                  ["agricultural"] = -2, 
-                  ["forestery"] = -2,
-                  ["destination"] = -1, 
-                  ["delivery"] = -1 
-             }
-
---find first tag in access hierachy which is set
-function get_access_tag(taglist, access_tags_hierachy)
-    for i,v in ipairs(access_tags_hierachy) do
-        local tag = taglist:get_value_by_key(v)
-        if tag ~= '' then
-            return tag
-        end
+function Tags.get_constant_by_key_value(way,lookup)
+  for key,set in pairs(lookup) do
+    local way_value = way:get_value_by_key(key)
+    for value,t in pairs(set) do
+      if way_value == value then
+        return key,value,t
+      end
     end
-    return nil
+  end
 end
 
--- convert access value into grade
-function as_access_grade(value)
-    if access_values[value] == nil then
-        return 0
-    else
-        return access_values[value]
-    end
-end
-
---find first tag in access hierachy which is set
-function get_access_grade(taglist, access_tags_hierachy)
-    return as_access_grade(get_access_tag(taglist, access_tags_hierachy))
-end
-
--------------------  SURFACE -----------------------------------------------
-
-function get_surface(taglist)
-    local surface = taglist:get_value_by_key('surface')
-    if surface ~= '' then
-        return surface
-    else
-        local highway = taglist:get_value_by_key("highway")
-
-        if highway == 'track' then
-            local grade = taglist:get_value_by_key("tracktype")
-            if grade == "grade1" then
-                return "paved"
-            elseif grade == "grade3" then
-                return "gravel"
-            elseif grade == "grade4" then
-                return "ground"
-            elseif grade == "grade5" then
-                return "grass"
-            else
-                return "unpaved"
-            end
-        elseif highway == "path" then
-            return "ground"
-        end
-    end
-    
-    return "paved"
-end
-
------------- NAMING ------------------------------
-
--- Set the name of the way
-function get_name (taglist, name_list)
-    for i,v in ipairs(name_list) do
-        local tag = taglist:get_value_by_key(v)
-        if tag ~= '' then
-            return tag
-        end
-    end
-    return ''
-end
-
------------- TRACKS ------------------------------
-
-function get_trackgrade(taglist)
-    local grade = taglist:get_value_by_key('tracktype')
-    if grade ~= '' then
-        s, e, g = string.find(grade, '^grade(%d)$')
-        if s == 1 then
-            return g
-        end
-    end
-
-    -- assume grade 2 as default
-    return 2
-end
-
------------- ONEWAYS -----------------------------
-
-local oneway_values = {
-   ["yes"] = 1,
-   ["true"] = 1,
-   ["1"] = 1,
-   ["no"] = 0,
-   ["false"] = 0,
-   ["0"] = 0,
-   ["opposite"] = -1,
-   ["opposite_track"] = -1,
-   ["opposite_lane"] = -1,
-   ["-1"] = -1
-}
-
-function oneway_value(value)
-    return oneway_values[value]
-end
-
--- convert to a oneway type (default is bidirectional)
-function as_oneway(result, value)
-    -- work around the fact that Way may not always
-    -- be available at load time
-    local ownum = oneway_value(value)
-    if ownum == 1 then
-        result.forward_mode = 1
-        result.backward_mode = 0
-    elseif ownum == -1 then
-        result.forward_mode = 0
-        result.backward_mode = 1
-    else
-        result.forward_mode = 1
-        result.backward_mode = 1
-    end
-end
+return Tags

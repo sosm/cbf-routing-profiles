@@ -22,7 +22,7 @@ local access_list = { "bicycle", "vehicle", "access" }
 -- NODE FUNCTION
 --
 -- Node    in: lat,lon,id,tags
--- result out: bollard,traffic_light
+-- result out: barrier,traffic_lights
 
 -- default is forbidden, so add allowed ones only
 local barrier_access = {
@@ -40,8 +40,8 @@ function node_function (node, result)
     barrier.set_bollard(node, result, access_list, barrier_access)
 
 	-- flag delays	
-	if result.bollard or node:get_value_by_key("highway") == "traffic_signals" then
-		result.traffic_light = true
+	if result.barrier or node:get_value_by_key("highway") == "traffic_signals" then
+		result.traffic_lights = true
 	end
 
 	return 1
@@ -162,6 +162,5 @@ function way_function (way, result)
     end
   
     result.name = tags.get_name(way, name_list)
-    result.type = 1
     return 1
 end
