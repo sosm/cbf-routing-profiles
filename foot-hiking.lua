@@ -91,6 +91,7 @@ local profile = {
       living_street   = 11,
       service         = 10,
       path            = 12,
+      track           = 11,
       steps           = 11,
       pedestrian      = 12,
       pier            = 10,
