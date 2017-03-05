@@ -280,12 +280,12 @@ function Handlers.handle_surface_penalties(way,result,data,profile)
     result.backward_speed = profile.surface_penalties[surface] * result.backward_speed
   end
   if tracktype and profile.tracktype_speeds[tracktype] then
-    result.forward_speed = profile.tracktype_speeds[tracktype] * result.forward_speed
-    result.backward_speed = profile.tracktype_speeds[tracktype] * result.backward_speed
+    result.forward_speed = profile.tracktype_speeds[tracktype]
+    result.backward_speed = profile.tracktype_speeds[tracktype]
   end
   if smoothness and profile.smoothness_speeds[smoothness] then
-    result.forward_speed = profile.smoothness_speeds[smoothness] * result.forward_speed
-    result.backward_speed = profile.smoothness_speeds[smoothness] * result.backward_speed
+    result.forward_speed = profile.smoothness_speeds[smoothness]
+    result.backward_speed = profile.smoothness_speeds[smoothness]
   end
 end
 
