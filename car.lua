@@ -59,17 +59,25 @@ local profile = {
     'vehicle',
     'permissive',
     'designated',
-    'destination',
   },
 
   access_tag_blacklist = Set {
     'no',
-    'private',
     'agricultural',
     'forestry',
     'emergency',
     'psv',
-    'delivery'
+    'customers',
+    'private',
+    'delivery',
+    'destination'
+  },
+
+  restricted_access_tag_list = Set {
+    'private',
+    'delivery',
+    'destination',
+    'customers',
   },
 
   access_tags_hierarchy = Sequence {
@@ -123,6 +131,21 @@ local profile = {
     parking           = 0.5,
     parking_aisle     = 0.5,
     driveway          = 0.5,
+  },
+
+  restricted_highway_whitelist = Set {
+      'motorway',
+      'motorway_link',
+      'trunk',
+      'trunk_link',
+      'primary',
+      'primary_link',
+      'secondary',
+      'secondary_link',
+      'tertiary',
+      'tertiary_link',
+      'residential',
+      'living_street',
   },
 
   route_speeds = {
@@ -248,7 +271,7 @@ function node_function (node, result)
   -- parse access and barrier tags
   local access = find_access_tag(node, profile.access_tags_hierarchy)
   if access then
-    if profile.access_tag_blacklist[access] then
+    if profile.access_tag_blacklist[access] and not profile.restricted_access_tag_list[access] then
       result.barrier = true
     end
   else
@@ -292,10 +315,11 @@ function way_function(way, result)
   }
 
   -- perform an quick initial check and abort if the way is
-  -- obviously not routable. here we require at least one
-  -- of the prefetched tags to be present, ie. the data table
-  -- cannot be empty
-  if next(data) == nil then     -- is the data table empty?
+  -- obviously not routable.
+  -- highway or route tags must be in data table, bridge is optional
+  if (not data.highway or data.highway == '') and
+  (not data.route or data.route == '')
+  then
     return
   end
 
@@ -326,7 +350,7 @@ function way_function(way, result)
     -- handle service road restrictions
     'handle_service',
 
-    -- check high occupancy vehicle restrictions
+    -- handle high occupancy vehicle
     'handle_hov',
 
     -- compute speed taking into account way type, maxspeed tags, etc.
@@ -360,19 +384,19 @@ function turn_function (turn)
   local turn_penalty = profile.turn_penalty
   local turn_bias = profile.turn_bias
 
+  if turn.has_traffic_light then
+      turn.duration = profile.traffic_light_penalty
+  end
+
   if turn.turn_type ~= turn_type.no_turn then
     if turn.angle >= 0 then
-      turn.duration = turn_penalty / (1 + math.exp( -((13 / turn_bias) *  turn.angle/180 - 6.5*turn_bias)))
+      turn.duration = turn.duration + turn_penalty / (1 + math.exp( -((13 / turn_bias) *  turn.angle/180 - 6.5*turn_bias)))
     else
-      turn.duration = turn_penalty / (1 + math.exp( -((13 * turn_bias) * -turn.angle/180 - 6.5/turn_bias)))
+      turn.duration = turn.duration + turn_penalty / (1 + math.exp( -((13 * turn_bias) * -turn.angle/180 - 6.5/turn_bias)))
     end
 
     if turn.direction_modifier == direction_modifier.u_turn then
       turn.duration = turn.duration + profile.u_turn_penalty
-    end
-
-    if turn.has_traffic_light then
-       turn.duration = turn.duration + profile.traffic_light_penalty
     end
 
     -- for distance based routing we don't want to have penalties based on turn angle
@@ -381,5 +405,12 @@ function turn_function (turn)
     else
        turn.weight = turn.duration
     end
+  end
+
+  if properties.weight_name == 'routability' then
+      -- penalize turns from non-local access only segments onto local access only tags
+      if not turn.source_restricted and turn.target_restricted then
+          turn.weight = properties.max_turn_weight;
+      end
   end
 end
