@@ -133,21 +133,6 @@ local profile = {
     driveway          = 0.5,
   },
 
-  restricted_highway_whitelist = Set {
-      'motorway',
-      'motorway_link',
-      'trunk',
-      'trunk_link',
-      'primary',
-      'primary_link',
-      'secondary',
-      'secondary_link',
-      'tertiary',
-      'tertiary_link',
-      'residential',
-      'living_street',
-  },
-
   route_speeds = {
     ferry = 5,
     shuttle_train = 10
