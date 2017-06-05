@@ -40,8 +40,10 @@ rm -f $BUILDDIR/*
 for OSRMTYPE in $PROFILES; do 
     osminbuild=$BUILDDIR/$OSRMTYPE.${osmdatafile#*.}
     ln -s $osmdatadir/$osmdatafile $osminbuild
-    LUA_PATH="$scriptdir/lib/?.lua" ./osrm-extract -p $scriptdir/$OSRMTYPE.lua $osminbuild
-    LUA_PATH="$scriptdir/lib/?.lua" ./osrm-contract $BUILDDIR/$OSRMTYPE.osrm 
+    time LUA_PATH="$scriptdir/lib/?.lua" ./osrm-extract -p $scriptdir/$OSRMTYPE.lua $osminbuild
+    echo "time for $OSRMTYPE extract"
+    time LUA_PATH="$scriptdir/lib/?.lua" ./osrm-contract $BUILDDIR/$OSRMTYPE.osrm --core 0.6
+    echo "time for $OSRMTYPE contract"
 done
 
 if [ $COPYDATA = "yes" ]; then

@@ -294,10 +294,12 @@ function Handlers.handle_surface_penalties(way,result,data,profile)
   local surface = way:get_value_by_key("surface")
   local tracktype = way:get_value_by_key("tracktype")
   local smoothness = way:get_value_by_key("smoothness")
+  result.forward_rate = 1
+  result.backward_rate = 1
 
   if surface and profile.surface_penalties[surface] then
-    result.forward_speed = profile.surface_penalties[surface] * result.forward_speed
-    result.backward_speed = profile.surface_penalties[surface] * result.backward_speed
+    result.forward_rate = profile.surface_penalties[surface]
+    result.backward_rate = profile.surface_penalties[surface]
   end
   if tracktype and profile.tracktype_speeds[tracktype] then
     result.forward_speed = profile.tracktype_speeds[tracktype]

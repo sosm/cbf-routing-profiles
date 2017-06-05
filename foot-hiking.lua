@@ -7,11 +7,12 @@ local Set = require('lib/set')
 local Sequence = require('lib/sequence')
 local Handlers = require("lib/handlers")
 local next = next       -- bind to local for speed
+local Tags = require('lib/tags')
 
 properties.max_speed_for_map_matching    = 40/3.6 -- kmph -> m/s
 properties.use_turn_restrictions         = false
 properties.continue_straight_at_waypoint = false
-properties.weight_name                   = 'duration'
+properties.weight_name                   = 'routability'
 
 local walking_speed = 10
 
@@ -282,10 +283,9 @@ function turn_function (turn)
   if turn.has_traffic_light then
      turn.duration = profile.traffic_light_penalty
   end
-  if properties.weight_name == 'routability' then
-      -- penalize turns from non-local access only segments onto local access only tags
-      if not turn.source_restricted and turn.target_restricted then
-          turn.weight = turn.weight + 3000
-      end
+
+  -- penalize turns from non-local access only segments onto local access only tags
+  if not turn.source_restricted and turn.target_restricted then
+      turn.weight = turn.weight + 3000
   end
 end

@@ -7,13 +7,14 @@ local Sequence = require('lib/sequence')
 local Handlers = require("lib/handlers")
 local next = next       -- bind to local for speed
 local limit = require("lib/maxspeed").limit
+local Tags = require('lib/tags')
 
 -- these need to be global because they are accesed externaly
 properties.max_speed_for_map_matching    = 110/3.6 -- kmph -> m/s
 properties.use_turn_restrictions         = false
 properties.continue_straight_at_waypoint = false
-properties.weight_name                   = 'duration'
---properties.weight_name                   = 'cyclability'
+--properties.weight_name                   = 'duration'
+properties.weight_name                   = 'routability'
 
 
 local default_speed = 16
@@ -318,9 +319,27 @@ function way_function (way, result)
   end
 
   -- access
-  local access = find_access_tag(way, profile.access_tags_hierarchy)
-  if access and profile.access_tag_blacklist[access] then
-    return
+  data.forward_access, data.backward_access =
+    Tags.get_forward_backward_by_set(way,data,profile.access_tags_hierarchy)
+
+  if profile.restricted_access_tag_list[data.forward_access] then
+      result.forward_restricted = true
+  end
+
+  if profile.restricted_access_tag_list[data.backward_access] then
+      result.backward_restricted = true
+  end
+
+  if profile.access_tag_blacklist[data.forward_access] and not result.forward_restricted then
+    result.forward_mode = mode.inaccessible
+  end
+
+  if profile.access_tag_blacklist[data.backward_access] and not result.backward_restricted then
+    result.backward_mode = mode.inaccessible
+  end
+
+  if result.forward_mode == mode.inaccessible and result.backward_mode == mode.inaccessible then
+    return false
   end
 
   -- other tags
@@ -509,8 +528,8 @@ function way_function (way, result)
   -- maxspeed
   limit( result, maxspeed, maxspeed_forward, maxspeed_backward )
 
-  -- convert duration into cyclability
-  if properties.weight_name == 'cyclability' then
+  -- convert duration into routability
+  if properties.weight_name == 'routability' then
       local is_unsafe = profile.safety_penalty < 1 and profile.unsafe_highway_list[data.highway]
       local is_undesireable = data.highway == "service" and profile.service_penalties[service]
       local penalty = 1.0
@@ -572,11 +591,12 @@ function turn_function(turn)
   if turn.has_traffic_light then
      turn.duration = turn.duration + profile.traffic_light_penalty
   end
-  if properties.weight_name == 'cyclability' then
+  if properties.weight_name == 'routability' then
       turn.weight = turn.duration
-      -- penalize turns from non-local access only segments onto local access only tags
-      if not turn.source_restricted and turn.target_restricted then
-          turn.weight = turn.weight + 3000
-      end
+  end
+
+  -- penalize turns from non-local access only segments onto local access only tags
+  if not turn.source_restricted and turn.target_restricted then
+      turn.weight = turn.weight + 3000
   end
 end
