@@ -165,7 +165,7 @@ local profile = {
   },
 
   route_speeds = {
-    ferry = 5
+    ferry = 4
   },
 
   bridge_speeds = {
