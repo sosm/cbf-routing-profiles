@@ -256,8 +256,7 @@ function way_function(way, result)
     'handle_movables',
 
     -- compute speed taking into account way type, maxspeed tags, etc.
-    'handle_speed',
-    'handle_surface_penalties',
+    'handle_speed_foot',
 
     -- set speed for path
     'adjust_speed_for_path',
@@ -274,6 +273,13 @@ function way_function(way, result)
   }
 
   Handlers.run(handlers,way,result,data,profile)
+  
+  if result.forward_rate == -1 and result.forward_speed > 0 then
+    result.forward_rate = result.forward_speed / 3.6;
+  end
+  if result.backward_rate == -1 and result.backward_speed > 0  then
+    result.backward_rate = result.backward_speed / 3.6;
+  end
 end
 
 function turn_function (turn)
