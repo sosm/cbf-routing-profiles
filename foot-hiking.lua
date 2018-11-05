@@ -108,6 +108,10 @@ local profile = {
       pier            = 10,
     },
 
+    public_transport = {
+      platform        = 10
+    },
+
     railway = {
       platform        = 10
     },
