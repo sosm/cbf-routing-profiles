@@ -11,7 +11,7 @@ find_access_tag = require("lib/access").find_access_tag
 
 -- Setup function to load the raster file (shadow data) and initialize the walking profile
 function setup()
-  local raster_path = os.getenv('OSRM_RASTER_SOURCE') or "shadows_zurich_city.asc"
+  local raster_path = os.getenv('OSRM_RASTER_SOURCE') or "shadow2.asc"
 
   -- Update these values as per your .asc file header:
   -- This is an example. Ensure these match the actual ASC file's metadata.
@@ -101,6 +101,16 @@ function setup()
   }
 end
 
+function log_result(result)
+  print("Inspecting result object:")
+  print("Forward Rate:", result.forward_rate)
+  print("Backward Rate:", result.backward_rate)
+  print("Forward Speed:", result.forward_speed)
+  print("Backward Speed:", result.backward_speed)
+  print("Weight:", result.weight)
+end
+
+
 -- Calculate rate based on shadow_value:
 -- - -9999 (nodata): return 0, no adjustment
 -- - 0 (black/shadow): very high preference
@@ -114,16 +124,16 @@ function calculate_rate(shadow_value)
     return 0
   end
 
-  -- Fourth power penalty:
-  -- At 0: rate = large_factor / 1 = large_factor (very high preference)
-  -- At 1: rate = large_factor / 2 still relatively high
-  -- At 2: rate = large_factor / (1 + 2^4) = large_factor / 17, a huge drop
-  -- At 10: rate = large_factor / (1 + 10^4) = large_factor / 10001, enormous penalty
-
+  -- Exponential decay approach:
+  -- rate = large_factor * exp(-shadow_value * scale)
+  -- For shadow_value = 0, rate = large_factor * exp(0) = large_factor (maximum preference)
+  -- For larger shadow_value, rate decreases exponentially.
+  -- Adjust 'scale' to control how fast the preference drops off.
+  
   local large_factor = 1000000
-  local exponent = 4  -- Increase exponent for more severe penalty
-  local rate = large_factor / (1.0 + (shadow_value ^ exponent))
+  local scale = 0.5  -- Increase this value to make the penalty grow faster for large shadow values
 
+  local rate = large_factor * math.exp(-shadow_value * scale)
   return rate
 end
 
@@ -154,12 +164,18 @@ end
 
 function process_way(profile, way, result)
   local data = {
-    highway = way:get_value_by_key('highway')
+    highway = way:get_value_by_key('highway'),
+    tunnel = way:get_value_by_key('tunnel'),
+    public_transport = way:get_value_by_key('public_transport'),
+    shelter = way:get_value_by_key('shelter')
+
   }
 
   if next(data) == nil then
     return
   end
+
+  -- log_result(result)
 
   local handlers = Sequence {
     WayHandlers.default_mode,
@@ -169,6 +185,14 @@ function process_way(profile, way, result)
   }
 
   WayHandlers.run(profile, way, result, data, handlers)
+
+  if (data.tunnel == "yes" or data.tunnel == "building_passage") or
+     (data.public_transport == "platform") or
+     (data.public_transport == "shelter" and data.shelter == "yes") then
+    -- Add a custom "priority" class
+    result.forward_classes = result.forward_classes or {}
+    result.forward_classes["priority"] = true
+  end
 end
 
 function process_segment(profile, segment)
@@ -192,6 +216,12 @@ function process_segment(profile, segment)
   -- we divide the segment weight by average_rate to reduce cost in those areas
   if average_rate > 0 then
     segment.weight = segment.weight / average_rate
+  end
+
+  -- Adjust weight based on custom "priority" class
+  if segment.forward_classes and segment.forward_classes["priority"] then
+    -- Further reduce weight for preferred routing
+    segment.weight = segment.weight * 0.5
   end
 end
 
