@@ -10,7 +10,7 @@ local CONFIG = {
   DEBUG = false,  -- Toggle debug logging (true/false)
 
   -- Raster source settings
-  RASTER_SOURCE = os.getenv('OSRM_RASTER_SOURCE') or "Alti3D_Zurich_10000_Zentimeter.asc",
+  RASTER_SOURCE = os.getenv('OSRM_PROFILE_PATH') .. "Alti3D_Zurich_10000_Zentimeter.asc",
   RASTER_METADATA = {
     lon_min = 8.470792821210,   -- xllcorner
     lat_min = 47.340983157973,  -- yllcorner

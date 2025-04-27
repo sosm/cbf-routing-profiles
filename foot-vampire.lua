@@ -11,7 +11,7 @@ find_access_tag = require("lib/access").find_access_tag
 
 -- Setup function to load the raster file (shadow data) and initialize the walking profile
 function setup()
-  local raster_path = os.getenv('OSRM_RASTER_SOURCE') or "shadow2.asc"
+  local raster_path = os.getenv('OSRM_PROFILE_PATH') ..  "/vampire/shadows_zurich_city.asc"
 
   -- Update these values as per your .asc file header:
   -- This is an example. Ensure these match the actual ASC file's metadata.
